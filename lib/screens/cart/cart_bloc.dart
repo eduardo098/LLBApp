@@ -22,6 +22,14 @@ class CartBloc {
     cartStreamController.sink.add(allItems);
   }
 
+  double getTotal() {
+    double total = 0.0;
+    for(int i = 0; i < allItems.length; i++) {
+      total += double.parse(allItems[i].price);
+    }
+    return total;
+  }
+
   dispose() {
     cartStreamController.close();
   }

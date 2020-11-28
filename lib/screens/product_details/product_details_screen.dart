@@ -7,17 +7,27 @@ import 'package:bloc/bloc.dart';
 import '../cart/cart_bloc.dart';
 import '../products/product.dart';
 
-class ProductDetails extends StatelessWidget {
+class ProductDetails extends StatefulWidget {
 
   Product producto;
-  List<int> extras = [];
-
-  TextEditingController comentariosController = TextEditingController();
 
   ProductDetails(this.producto);
 
   @override
+  _ProductDetailsState createState() => _ProductDetailsState();
+}
+
+class _ProductDetailsState extends State<ProductDetails> {
+  List<int> extras = [];
+
+  int quantity = 0;
+
+  TextEditingController comentariosController = TextEditingController();
+
+  @override
   Widget build(BuildContext context) {
+    final ProductDetailsBloc clickedBloc = BlocProvider.of<ProductDetailsBloc>(context);
+    clickedBloc.add(AddQuantity(0));
     return Scaffold(
       backgroundColor: AppColors.black,
       body: SingleChildScrollView(
@@ -28,7 +38,7 @@ class ProductDetails extends StatelessWidget {
             shrinkWrap: true,
             children: <Widget>[
               Container(
-                child: Image.network(this.producto.image, fit: BoxFit.cover,),
+                child: Image.network(this.widget.producto.image, fit: BoxFit.cover,),
                 height: 300,
                 width: MediaQuery.of(context).size.width,
               ),
@@ -37,14 +47,14 @@ class ProductDetails extends StatelessWidget {
                 child: Row (
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    Text(this.producto.name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                    Text('\$' + this.producto.price + ' MXN.', style: TextStyle(fontSize: 18, color: Colors.white))
+                    Text(this.widget.producto.name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                    Text('\$' + this.widget.producto.price + ' MXN.', style: TextStyle(fontSize: 18, color: Colors.white))
                   ],
                 )
               ),
               Padding(
                 padding: EdgeInsets.only(top: 20, left: 10, right: 20),
-                child: Text(this.producto.description,
+                child: Text(this.widget.producto.description,
                 style: LLBText.TextDefault,),
               ),
               quantityCounter(context),
@@ -97,9 +107,8 @@ class ProductDetails extends StatelessWidget {
   }
 
   Widget orderButton (BuildContext context) {
-    final ProductDetailsBloc clickedBloc = BlocProvider.of<ProductDetailsBloc>(context);
 
-    double total = double.parse(this.producto.price);
+    double total = double.parse(this.widget.producto.price);
 
     return BlocBuilder<ProductDetailsBloc, ClickedState> (
       builder: (context, state) {
@@ -122,14 +131,14 @@ class ProductDetails extends StatelessWidget {
                   ),
                   onPressed: () {
                     Product prod = Product(
-                      id: this.producto.id,
-                      image: this.producto.image,
-                      name: this.producto.name,
-                      description: this.producto.description,
-                      cantidad: state.productQuantity,
+                      id: this.widget.producto.id,
+                      image: this.widget.producto.image,
+                      name: this.widget.producto.name,
+                      description: this.widget.producto.description,
+                      cantidad: this.quantity,
                       extras: this.extras,
                       comentarios: this.comentariosController.text,
-                      price: this.producto.price
+                      price: state.orderTotal.toString()
                     );
                     cartBloc.addToCart(prod);
                   },
@@ -148,8 +157,6 @@ class ProductDetails extends StatelessWidget {
   Widget quantityCounter (BuildContext context) {
     final ProductDetailsBloc clickedBloc = BlocProvider.of<ProductDetailsBloc>(context);
 
-    int quantity = 1;
-
     return BlocBuilder<ProductDetailsBloc, ClickedState>(
       builder: (context, state) {
         return Container(
@@ -163,19 +170,20 @@ class ProductDetails extends StatelessWidget {
                   backgroundColor: Colors.blueGrey[800],
                   child: Text('-', style: TextStyle(fontSize: 20),),
                   onPressed: () {
-                    if(quantity <= 0) {
-                      return; 
+                    if(this.quantity == 0) {
+                      return;
                     } else {
-                      quantity -= 1;
-                      clickedBloc.add(RemoveQuantity(quantity));
-                      clickedBloc.add(UpdateTotal(double.parse(this.producto.price) * state.productQuantity));
-                      print("Cantidad:: " + state.productQuantity.toString());
+                      setState(() {
+                        this.quantity--;
+                      });
+                      clickedBloc.add(UpdateTotal(double.parse(this.widget.producto.price) * this.quantity));
+                      //clickedBloc.add(RemoveQuantity(state.productQuantity-1));
                     }
                   },)
               ),
               Padding(
                 padding: EdgeInsets.only(left: 20, right: 20),
-                child: Text(state.productQuantity.toString(), style: TextStyle(fontSize: 30, color: Colors.white))
+                child: Text(this.quantity.toString(), style: TextStyle(fontSize: 30, color: Colors.white))
               ),
               SizedBox(
                 child: FloatingActionButton(
@@ -183,12 +191,13 @@ class ProductDetails extends StatelessWidget {
                   backgroundColor: Colors.blueGrey[800],
                   child: Text('+', style: TextStyle(fontSize: 20),),
                   onPressed: () {
-                    quantity += 1;
-                    clickedBloc.add(AddQuantity(quantity));
-                    clickedBloc.add(UpdateTotal(double.parse(this.producto.price) * state.productQuantity));
-                    print("Cantidad:: " + state.productQuantity.toString());
+                    setState(() {
+                      this.quantity++;
+                    });
+                    clickedBloc.add(UpdateTotal(double.parse(this.widget.producto.price) * this.quantity));
+                    //clickedBloc.add(AddQuantity(state.productQuantity+1));
                   },)
-              ),  
+              ),
             ],
           )
         );
@@ -205,21 +214,18 @@ class ProductDetails extends StatelessWidget {
 
         if(extraID == 2) {
           value = state.isTocinoChecked;
-        } 
-        if(extraID == 3) {
+        } else if(extraID == 3) {
           value = state.isCebollaChecked;
-        } 
-        if(extraID == 4) {
+        } else if(extraID == 4) {
           value = state.isPinaChecked;
-        } 
-        if (extraID == 5) {
+        } else if (extraID == 5) {
           value = state.isJalapenoChecked;
-        } 
-        if (extraID == 6) {
+        } else if (extraID == 6) {
           value = state.isSalchichaChecked;
-        } 
-        if(extraID == 7) {
+        }else if(extraID == 7) {
           value = state.isQuesoChecked;
+        } else {
+          this.extras.add(1);
         }
 
         return Container(
@@ -236,64 +242,74 @@ class ProductDetails extends StatelessWidget {
                       if (extraID == 2) {
                         if(newVal) {
                           clickedBloc.add(ExtraTocino(newVal));
-                          clickedBloc.add(UpdateTotal(state.orderTotal + (15 * state.productQuantity)));
+                          clickedBloc.add(UpdateTotal(state.orderTotal + (10 * this.quantity)));
                           this.extras.add(2);
                           print("Extra:::::: " + this.extras.length.toString());
                           print("Valor:::: " + newVal.toString());
                         } else if(!newVal) {
                           clickedBloc.add(ExtraTocino(newVal));
-                          clickedBloc.add(UpdateTotal(state.orderTotal - (15 * state.productQuantity)));
+                          clickedBloc.add(UpdateTotal(state.orderTotal - (10 * this.quantity)));
                           this.extras.removeWhere((element) => element == 2);
                           print("Valor:::: " + newVal.toString());
                         }
                       } else if (extraID == 3) {
                         if(newVal) {
                           clickedBloc.add(ExtraCebolla(newVal));
-                          clickedBloc.add(UpdateTotal(state.orderTotal + (15 * state.productQuantity)));
+                          clickedBloc.add(UpdateTotal(state.orderTotal + (10 * this.quantity)));
+                          this.extras.add(3);
                           print("Valor:::: " + newVal.toString());
                         } else if(!newVal) {
                           clickedBloc.add(ExtraCebolla(newVal));
-                          clickedBloc.add(UpdateTotal(state.orderTotal - (15 * state.productQuantity)));
+                          clickedBloc.add(UpdateTotal(state.orderTotal - (10 * this.quantity)));
+                          this.extras.removeWhere((element) => element == 3);
                           print("Valor:::: " + newVal.toString());
                         }
                       } else if (extraID == 4) {
                         if(newVal) {
                           clickedBloc.add(ExtraPina(newVal));
-                          clickedBloc.add(UpdateTotal(state.orderTotal + (15 * state.productQuantity)));
+                          clickedBloc.add(UpdateTotal(state.orderTotal + (10 * this.quantity)));
+                          this.extras.add(4);
                           print("Valor:::: " + newVal.toString());
                         } else if(!newVal) {
                           clickedBloc.add(ExtraPina(newVal));
-                          clickedBloc.add(UpdateTotal(state.orderTotal - (15 * state.productQuantity)));
+                          clickedBloc.add(UpdateTotal(state.orderTotal - (10 * this.quantity)));
+                          this.extras.removeWhere((element) => element == 4);
                           print("Valor:::: " + newVal.toString());
                         }
                       } else if (extraID == 5) {
                         if(newVal) {
                           clickedBloc.add(ExtraJalapeno(newVal));
-                          clickedBloc.add(UpdateTotal(state.orderTotal + (15 * state.productQuantity)));
+                          clickedBloc.add(UpdateTotal(state.orderTotal + (10 * this.quantity)));
+                          this.extras.add(5);
                           print("Valor:::: " + newVal.toString());
                         } else if(!newVal) {
                           clickedBloc.add(ExtraJalapeno(newVal));
-                          clickedBloc.add(UpdateTotal(state.orderTotal - (15 * state.productQuantity)));
+                          clickedBloc.add(UpdateTotal(state.orderTotal - (10 * this.quantity)));
+                          this.extras.removeWhere((element) => element == 5);
                           print("Valor:::: " + newVal.toString());
                         }
                       } else if (extraID == 6) {
                         if(newVal) {
                           clickedBloc.add(ExtraSalchicha(newVal));
-                          clickedBloc.add(UpdateTotal(state.orderTotal + (15 * state.productQuantity)));
+                          clickedBloc.add(UpdateTotal(state.orderTotal + (10 * this.quantity)));
+                          this.extras.add(6);
                           print("Valor:::: " + newVal.toString());
                         } else if(!newVal) {
                           clickedBloc.add(ExtraSalchicha(newVal));
-                          clickedBloc.add(UpdateTotal(state.orderTotal - (15 * state.productQuantity)));
+                          clickedBloc.add(UpdateTotal(state.orderTotal - (10 * this.quantity)));
+                          this.extras.removeWhere((element) => element == 6);
                           print("Valor:::: " + newVal.toString());
                         }
                       } else if (extraID == 7) {
                         if(newVal) {
                           clickedBloc.add(ExtraQueso(newVal));
-                          clickedBloc.add(UpdateTotal(state.orderTotal + (15 * state.productQuantity)));
+                          clickedBloc.add(UpdateTotal(state.orderTotal + (10 * this.quantity)));
+                          this.extras.add(7);
                           print("Valor:::: " + newVal.toString());
                         } else if(!newVal) {
                           clickedBloc.add(ExtraQueso(newVal));
-                          clickedBloc.add(UpdateTotal(state.orderTotal - (15 * state.productQuantity)));
+                          clickedBloc.add(UpdateTotal(state.orderTotal - (10 * this.quantity)));
+                          this.extras.removeWhere((element) => element == 7);
                           print("Valor:::: " + newVal.toString());
                         }
                       }

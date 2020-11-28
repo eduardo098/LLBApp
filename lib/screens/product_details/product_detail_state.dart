@@ -51,7 +51,7 @@ class InitializeClickedState extends ClickedState {
     isJalapenoChecked: false,
     isSalchichaChecked: false,
     isQuesoChecked: false,
-    productQuantity: 0,
+    productQuantity: 1,
     orderTotal: 0.0,
     extras: []
   );

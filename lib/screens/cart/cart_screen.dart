@@ -8,15 +8,22 @@ import '../products/product.dart';
 import 'dart:convert';
 import '../../repos/cart_repository.dart';
 
-class CartScreen extends StatelessWidget {
+class CartScreen extends StatefulWidget {
 
   final String text;
 
+
+  CartScreen({this.text});
+
+  @override
+  _CartScreenState createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
   var productList = [];
 
   CartRepository _cartRepository = CartRepository();
 
-  CartScreen({this.text});
    @override
    Widget build(BuildContext context) {
      return Scaffold(
@@ -24,8 +31,10 @@ class CartScreen extends StatelessWidget {
        body: StreamBuilder(
          stream: cartBloc.getStream,
          initialData: cartBloc.allItems,
+         // ignore: missing_return
          builder: (context, snapshot) {
            if (snapshot.hasData) {
+             // ignore: missing_return
              var data = snapshot.data;
              return SingleChildScrollView(
                 child: Column(
@@ -95,7 +104,7 @@ class CartScreen extends StatelessWidget {
                     Container(
                       child: Align(
                         alignment: Alignment.center,
-                        child: Text('Total: \$458.99.', style: LLBText.HeaderExtra,)
+                        child: Text('Total: \$' + cartBloc.getTotal().toStringAsFixed(2), style: LLBText.HeaderExtra,)
                       )
                     ),
                     SizedBox(height: 40,),
@@ -127,7 +136,7 @@ class CartScreen extends StatelessWidget {
                     Container(
                       child: Align(
                         alignment: Alignment.center,
-                        child: Text('Recibiras una notificación cuando tu orden esté lista.', 
+                        child: Text('Recibiras una notificación cuando tu orden esté lista.',
                         style: LLBText.HeaderSmall,)
                       )
                     ),
